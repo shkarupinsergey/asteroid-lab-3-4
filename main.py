@@ -253,9 +253,10 @@ class AsteroidGame(tk.Tk):
 
     def _update_rockets(self):
         for rocket in self.rockets[:]:
-            rocket.move()
-            if not self._is_object_on_screen(rocket):
-                self.game_frame.delete(rocket.id)
+            if rocket.lifetime > 0:
+                rocket.move()
+            else:
+                rocket.destroy()
                 self.rockets.remove(rocket)
 
     def _update_asteroids(self):
@@ -264,18 +265,6 @@ class AsteroidGame(tk.Tk):
 
         for asteroid in self.asteroids[:]:
             asteroid.move()
-
-    def _is_object_on_screen(self, obj):
-        try:
-            bbox = self.game_frame.bbox(obj.id)
-            if not bbox:
-                return False
-            screen_width = self.winfo_screenwidth()
-            screen_height = self.winfo_screenheight()
-            return (0 <= bbox[0] <= screen_width and
-                    0 <= bbox[1] <= screen_height)
-        except:
-            return False
 
     def _spawn_asteroid(self):
         x = self._spawn_coordinate(self.winfo_screenwidth(), 100)
