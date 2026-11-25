@@ -3,12 +3,14 @@ import random
 import tkinter as tk
 from tkinter import font as tkfont
 
-from PIL import Image, ImageTk
+from graphics import Image, ImageTk
+import config
 
 from spaceship import Spaceship
 from asteroid import Asteroid
 from rocket import Rocket
 from config import *
+
 
 class AsteroidGame(tk.Tk):
     def __init__(self):
@@ -16,6 +18,7 @@ class AsteroidGame(tk.Tk):
         self.attributes("-fullscreen", FULLSCREEN)
         self.title(GAME_TITLE)
 
+        config.load_images()
         self._cache_resources()
 
         self._bind_events()
@@ -25,10 +28,12 @@ class AsteroidGame(tk.Tk):
         self.start_screen()
 
     def _cache_resources(self):
-        self.ui_font = tkfont.nametofont("TkDefaultFont", root=self).actual("family")
+        self.ui_font = tkfont.nametofont(
+            "TkDefaultFont", root=self
+        ).actual("family")
         self.load_background_image()
 
-        self.life_image_tk = ImageTk.PhotoImage(LIFE_IMAGE)
+        self.life_image_tk = ImageTk.PhotoImage(config.LIFE_IMAGE)
 
     def _bind_events(self):
         self.protocol("WM_DELETE_WINDOW", self.exit_game)
@@ -55,9 +60,13 @@ class AsteroidGame(tk.Tk):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
 
-        scaled_image = START_BACKGROUND_IMAGE.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        scaled_image = config.START_BACKGROUND_IMAGE.resize(
+            (screen_width, screen_height), Image.Resampling.LANCZOS
+        )
         self.bg_image = ImageTk.PhotoImage(scaled_image)
-        scaled_image = GAME_BACKGROUND_IMAGE.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        scaled_image = config.GAME_BACKGROUND_IMAGE.resize(
+            (screen_width, screen_height), Image.Resampling.LANCZOS
+        )
         self.game_bg_image = ImageTk.PhotoImage(scaled_image)
 
     def start_screen(self):
@@ -68,7 +77,6 @@ class AsteroidGame(tk.Tk):
 
         self.start_frame.create_image(0, 0, anchor=tk.NW, image=self.bg_image)
 
-
         for _ in range(15):
             x = self.winfo_screenwidth() - 1
             y = random.randint(0, self.winfo_screenheight())
@@ -78,14 +86,14 @@ class AsteroidGame(tk.Tk):
             data = asteroid.image.getdata()
             new_data = []
             for item in data:
-                new_data.append((item[0], item[1], item[2], int(item[3] * 0.45)))
+                new_data.append(
+                    (item[0], item[1], item[2], int(item[3] * 0.45))
+                )
             asteroid.image.putdata(new_data)
 
             asteroid.image_tk = ImageTk.PhotoImage(asteroid.image)
-            asteroid.id = self.start_frame.create_image(asteroid.x, asteroid.y,
-                                                        image=asteroid.image_tk)
+            self.start_frame.itemconfig(asteroid.id, image=asteroid.image_tk)
             self.asteroids_on_start_screen.append(asteroid)
-
 
         def move_asteroids():
             for asteroid in self.asteroids_on_start_screen:
@@ -132,7 +140,9 @@ class AsteroidGame(tk.Tk):
         self.game_frame = tk.Canvas(self, bd=0, highlightthickness=0)
         self.game_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.game_frame.create_image(0, 0, anchor=tk.NW, image=self.game_bg_image)
+        self.game_frame.create_image(
+            0, 0, anchor=tk.NW, image=self.game_bg_image
+        )
 
         for i in range(self.lives):
             life_image = self.game_frame.create_image(
@@ -142,8 +152,10 @@ class AsteroidGame(tk.Tk):
             )
             self.life_images.append(life_image)
 
-        self.spaceship = Spaceship(self.game_frame, self.winfo_screenwidth() // 2,
-                                   self.winfo_screenheight() // 2, 0)
+        self.spaceship = Spaceship(
+            self.game_frame, self.winfo_screenwidth() // 2,
+            self.winfo_screenheight() // 2, 0
+        )
 
         self.score_label = self.game_frame.create_text(
             self.winfo_screenwidth() - 40, 40,
@@ -157,6 +169,7 @@ class AsteroidGame(tk.Tk):
         self.bind("<KeyRelease-Up>", lambda e: self.spaceship.decelerate())
         self.bind("<space>", self.fire_rocket)
 
+        self.game_frame.update_idletasks()
         self.update_game()
 
     def update_lives(self):
@@ -176,22 +189,23 @@ class AsteroidGame(tk.Tk):
             else:
                 self.reset_player_position()
 
-
     def reset_player_position(self):
         self.spaceship.x = self.winfo_screenwidth() // 2
         self.spaceship.y = self.winfo_screenheight() // 2
         self.spaceship.speed = 0
         self.spaceship.angle = 0
-        self.spaceship.set_image(SPACESHIP_IMAGE)
-        self.game_frame.coords(self.spaceship.id, self.spaceship.x, self.spaceship.y)
+        self.spaceship.set_image(config.SPACESHIP_IMAGE)
+        self.game_frame.coords(
+            self.spaceship.id, self.spaceship.x, self.spaceship.y
+        )
 
     def update_score(self):
         self.score += 1
         if self.score % 5 == 0:
             self.asteroid_speed_multiplier += 1
-        self.game_frame.itemconfig(self.score_label, text=f"Счёт: {self.score}")
-
-
+        self.game_frame.itemconfig(
+            self.score_label, text=f"Счёт: {self.score}"
+        )
 
     def fire_rocket(self, event=None):
         current_coords = self.game_frame.coords(self.spaceship.id)
@@ -202,8 +216,8 @@ class AsteroidGame(tk.Tk):
 
         angle_rad = math.radians(self.spaceship.angle)
 
-        nose_x = x + (SPACESHIP_IMAGE.width / 2 + 22) * math.sin(angle_rad)
-        nose_y = y - (SPACESHIP_IMAGE.height / 2) * math.cos(angle_rad)
+        nose_x = x + (config.SPACESHIP_IMAGE.width / 2 + 22) * math.sin(angle_rad)
+        nose_y = y - (config.SPACESHIP_IMAGE.height / 2) * math.cos(angle_rad)
 
         rocket = Rocket(self.game_frame, nose_x, nose_y, self.spaceship.angle)
         self.rockets.append(rocket)
@@ -269,7 +283,10 @@ class AsteroidGame(tk.Tk):
     def _spawn_asteroid(self):
         x = self._spawn_coordinate(self.winfo_screenwidth(), 100)
         y = self._spawn_coordinate(self.winfo_screenheight(), 150)
-        asteroid = Asteroid(self.game_frame, x, y, self.asteroid_speed_multiplier, game_running=True)
+        asteroid = Asteroid(
+            self.game_frame, x, y, self.asteroid_speed_multiplier,
+            game_running=True
+        )
         self.asteroids.append(asteroid)
 
     @staticmethod
